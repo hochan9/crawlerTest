@@ -13,6 +13,7 @@ package com.example.service;
 import com.example.dto.Document;
 import com.example.dto.KakaoAddressResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -31,6 +32,7 @@ import reactor.core.publisher.Mono;
  * @since 지원하는 자바버전 (ex : 5+ 5이상)
  */
 
+@Slf4j
 @Service
 public class KakaoGeocodingService {
 
@@ -57,6 +59,7 @@ public class KakaoGeocodingService {
               if (response.getDocuments() == null || response.getDocuments().isEmpty()) {
                 return Mono.empty();
               }
+              log.info(response.getDocuments().get(0).toString());
               return Mono.just(response.getDocuments().get(0));
             });
   }

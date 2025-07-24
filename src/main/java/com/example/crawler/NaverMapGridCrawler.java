@@ -52,13 +52,28 @@ public class NaverMapGridCrawler {
                 double lft = lon;
                 double rgt = lon + 0.1;
 
-                double delta = 0.1;
-                List<GridArea> grids = generateGrid(0.001, lat - delta, lat + delta, lon - delta, lon + delta);
+                String depth3 = doc.getAddress().getRegion_3depth_h_name();
+                double delta;
+                double step;
+                int z;
+
+                if (depth3 != null && !depth3.isBlank()) {
+                  // 동 단위일 경우: 좁게 크롤링
+                  delta = 0.005;
+                  step = 0.002;
+                  z = 15;
+                } else {
+                  // 시/구 단위일 경우: 넓게 크롤링
+                  delta = 0.05;
+                  step = 0.02;
+                  z = 11;
+                }
+                List<GridArea> grids = generateGrid(0.002, lat - delta, lat + delta, lon - delta, lon + delta, z);
                 return Flux.fromIterable(grids);
               })
               .transform(this::crawlAllGrids);
     } else {
-      List<GridArea> grids = generateNationwideGrid(0.00001);
+      List<GridArea> grids = generateNationwideGrid(0.1);
       return crawlAllGrids(Flux.fromIterable(grids));
     }
   }
@@ -67,8 +82,6 @@ public class NaverMapGridCrawler {
     return webClient.get()
             .uri(uriBuilder -> uriBuilder
                     .path("/cluster/ajax/articleList")
-                    .queryParam("rletTpCd", "APT")
-                    .queryParam("tradTpCd", "A1")
                     .queryParam("z", area.z())
                     .queryParam("lat", area.lat())
                     .queryParam("lon", area.lon())
@@ -88,9 +101,8 @@ public class NaverMapGridCrawler {
             });
   }
 
-  public List<GridArea> generateGrid(double step, double minLat, double maxLat, double minLon, double maxLon) {
+  public List<GridArea> generateGrid(double step, double minLat, double maxLat, double minLon, double maxLon, int z) {
     List<GridArea> gridAreas = new ArrayList<>();
-    final double EPSILON = 0.0000001; // 매우 미세한 오차 보정
 
     for (double lat = minLat; lat < maxLat; lat += step) {
       for (double lon = minLon; lon < maxLon; lon += step) {
@@ -102,7 +114,7 @@ public class NaverMapGridCrawler {
         double centerLat = (top + btm) / 2.0;
         double centerLon = (lft + rgt) / 2.0;
 
-        gridAreas.add(new GridArea(centerLat, centerLon, lft, btm, rgt, top, 16,
+        gridAreas.add(new GridArea(centerLat, centerLon, lft, btm, rgt, top, z,
                 String.format("(%.6f,%.6f)", centerLat, centerLon)));
       }
     }
@@ -111,6 +123,6 @@ public class NaverMapGridCrawler {
   }
 
   public List<GridArea> generateNationwideGrid(double step) {
-    return generateGrid(step, 33.0, 38.0, 124.9, 131.0);
+    return generateGrid(step, 33.0, 38.0, 124.9, 131.0, 9);
   }
 }

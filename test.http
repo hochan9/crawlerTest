@@ -1,4 +1,4 @@
-GET http://localhost:8080/api/crawl?region=철산
+GET http://localhost:8080/api/crawl?region=서울
 
 ####
 
