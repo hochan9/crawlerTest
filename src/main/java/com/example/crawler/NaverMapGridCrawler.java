@@ -29,17 +29,16 @@ public class NaverMapGridCrawler {
    */
   public Flux<Article> crawlAllGrids(Flux<GridArea> gridFlux) {
     return gridFlux
-            .buffer(1) // 1개씩 묶음. 쓰레드 개수만큼 요청하기에 쓰레드당 1건씩 처리
-            .concatMap(batch ->
-                    Flux.fromIterable(batch)
-                            .parallel()
-                            .runOn(Schedulers.parallel())
-                            .flatMap(this::crawlOneGrid)
-                            .sequential()
-                            .delaySubscription(Duration.ofSeconds(1)) // 1초 딜레이
+            .bufferTimeout(5, Duration.ofSeconds(5)) // 5초에 최대 5건씩만 처리
+            .concatMap(batch -> Flux.fromIterable(batch)
+                    .parallel()
+                    .runOn(Schedulers.parallel())
+                    .flatMap(this::crawlOneGrid)
+                    .sequential()
             )
             .doOnNext(a -> log.info("Article: {}", a.getAtclNm()));
   }
+
 
   public Flux<Article> crawlByRegion(String region) {
     if (region != null && !region.isBlank()) {
